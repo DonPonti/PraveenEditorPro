@@ -1,0 +1,22 @@
+Praveen Editor v1.4 — Audio Mix Studio
+
+Added:
+- Original clip audio inclusion and gain control.
+- One external voice-over/narration track with timeline offset and gain.
+- Independent background music gain.
+- Automatic music ducking driven by voice-over and camera dialogue.
+- Audio stream probing so silent video clips are skipped safely.
+- Backward-compatible project settings for older project JSON files.
+
+Validation:
+- Python syntax compilation passed for app.py and vlog_core.py.
+- Core render tests passed with: voice-over + clip audio + music + ducking;
+  voice-over-only; sped-up clip audio without ducking; and music-only.
+- Output files were generated and contain audio streams.
+- Full PySide6 GUI runtime could not be launched in the build environment because
+  PySide6 is not installed there. The user should run the app on Windows to verify UI.
+
+Known limits:
+- One continuous voice-over file per project; no multi-clip audio timeline yet.
+- Speed-ramped video uses normal-speed clip audio.
+- Ducking uses FFmpeg side-chain compression, not speech recognition.
