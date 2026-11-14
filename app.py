@@ -43,6 +43,7 @@ from PySide6.QtWidgets import (
 )
 
 import vlog_core as core
+import ai_director
 
 # Set VLOG_NO_MM=1 to disable the built-in video player (thumbnail previews only)
 # if your system's Qt media backend ever misbehaves.
@@ -630,6 +631,42 @@ class MainWindow(QMainWindow):
         row.addWidget(self.btn_ai_apply)
         row.addWidget(self.btn_ai_copy)
         lay.addLayout(row)
+
+        director = QGroupBox("AI Director — create the actual edit")
+        director_form = QFormLayout(director)
+        self.ai_director_brief = QPlainTextEdit()
+        self.ai_director_brief.setPlaceholderText(
+            "Example: Make a 30-second cinematic travel film. Open with the strongest scenic "
+            "shot, build a sense of discovery, use natural transitions, and end on a memorable view. "
+            "Avoid random fast cuts."
+        )
+        self.ai_director_brief.setMinimumHeight(92)
+        self.ai_director_length = QSpinBox()
+        self.ai_director_length.setRange(5, 180)
+        self.ai_director_length.setValue(30)
+        self.ai_director_length.setSuffix(" s")
+        self.ai_director_style = QComboBox()
+        self.ai_director_style.addItems([
+            "Cinematic", "Documentary", "Fast social", "Emotional",
+            "Product advertisement", "Vlog"
+        ])
+        director_form.addRow("Your creative brief", self.ai_director_brief)
+        director_form.addRow("Target duration", self.ai_director_length)
+        director_form.addRow("Editing direction", self.ai_director_style)
+        self.btn_ai_director = QPushButton("✦ Create my video with AI Director")
+        self.btn_ai_director.setObjectName("primary")
+        self.btn_ai_director.clicked.connect(self.generate_ai_edit)
+        director_form.addRow(self.btn_ai_director)
+        director_note = QLabel(
+            "AI Director studies sampled frames from your clips, plans a story-led sequence, "
+            "and builds a normal editable timeline. Only sampled still frames and your brief are "
+            "sent to Gemini; original video and audio files stay on this PC."
+        )
+        director_note.setWordWrap(True)
+        director_note.setStyleSheet("color:#8e95a5;")
+        director_form.addRow(director_note)
+        lay.addWidget(director)
+
         self.ai_output = QPlainTextEdit()
         self.ai_output.setReadOnly(True)
         self.ai_output.setPlaceholderText("Your AI creator pack will appear here…")
@@ -645,6 +682,75 @@ class MainWindow(QMainWindow):
         lay.addWidget(note)
         self.ai_pack = None
         return w
+
+    def generate_ai_edit(self):
+        if self.worker and self.worker.isRunning():
+            return
+        if not self.media:
+            self.error("Add your video clips or photos in the Media tab first.")
+            return
+        brief = self.ai_director_brief.toPlainText().strip()
+        if not brief:
+            self.error("Describe the video you want the AI Director to make.")
+            return
+        self.collect_settings()
+        if not self.project.music or not Path(self.project.music).exists():
+            self.pick_music()
+            if not self.project.music or not Path(self.project.music).exists():
+                self.error("AI Director needs a background music file. Choose one in Settings.")
+                return
+        if self.project.items and QMessageBox.question(
+                self, "Create AI edit",
+                "This replaces the current timeline with a new AI-directed edit. Continue?"
+        ) != QMessageBox.StandardButton.Yes:
+            return
+        media = list(self.media)
+        base = copy.deepcopy(self.project)
+        length = self.ai_director_length.value()
+        style = self.ai_director_style.currentText()
+        key = self.ai_key.text().strip() or None
+        self.ai_output.setPlainText(
+            "AI Director is inspecting your footage. It will build a story-led timeline; "
+            "this may take a little while."
+        )
+        self._start(
+            lambda cb: ai_director.create_ai_edit(
+                media, base, brief, target_length=length, visual_style=style,
+                api_key=key, cb=cb
+            ),
+            self._ai_edit_done,
+        )
+
+    def _ai_edit_done(self, result):
+        proj = result["project"]
+        plan = result["plan"]
+        self.snapshot()
+        self.project = proj
+        self.sel = 0 if proj.items else -1
+        self.apply_settings()
+        self.refresh()
+        lines = [
+            "AI DIRECTOR — EDIT PLAN",
+            "",
+            plan.get("editorial_summary", ""),
+            "",
+            f"Shots: {len(plan.get('shots', []))}",
+            f"Sampled frames reviewed by Gemini: {plan.get('sampled_frames_sent', 0)}",
+            "Original video/audio uploaded: No",
+            "",
+        ]
+        for index, shot in enumerate(plan.get("shots", []), 1):
+            lines.append(
+                f"{index:02d}. {shot.get('clip', 'Clip')} · {shot.get('duration', 0):.1f}s"
+                f" — {shot.get('role', '')}"
+            )
+            if shot.get("reason"):
+                lines.append(f"    {shot['reason']}")
+        self.ai_output.setPlainText("\n".join(lines))
+        self.say(
+            f"AI Director created an editable {proj.total_length():.1f}s cut with "
+            f"{len(proj.items)} shots. Review it before exporting."
+        )
 
     def generate_ai_pack(self):
         topic = self.ai_topic.text().strip()
