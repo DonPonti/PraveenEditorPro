@@ -47,12 +47,15 @@ def create_ai_edit(media_paths, base_project, brief, target_length=30, visual_st
         kind = core.media_kind(path)
         try: duration = core.media_duration(path) if kind == "video" else 5.0
         except Exception: continue
+        local_parts = []
         for t, frame in _frames(path, kind, duration):
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             sharp = float(cv2.Laplacian(gray, cv2.CV_64F).var())
             ok, encoded = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 76])
-            if ok: parts.append((f"CLIP {len(records)} {Path(path).name} sample at {t:.2f}s; sharpness {min(sharp,1000):.1f}; brightness {gray.mean():.1f}", encoded.tobytes()))
-        if parts and (not records or records[-1]["path"] != path): records.append({"id":len(records),"name":Path(path).name,"kind":kind,"duration":round(duration,2),"path":str(path)})
+            if ok: local_parts.append((t, f"CLIP {len(records)} {Path(path).name} sample at {t:.2f}s; sharpness {min(sharp,1000):.1f}; brightness {gray.mean():.1f}", encoded.tobytes()))
+        if local_parts:
+            records.append({"id":len(records),"name":Path(path).name,"kind":kind,"duration":round(duration,2),"path":str(path)})
+            parts.extend((label, data) for _, label, data in local_parts)
         cb(f"Inspecting footage {n+1}/{len(paths)}", 0.05 + 0.4*(n+1)/len(paths))
     if not records or not parts: raise core.EditorError("Could not read usable frames from your media.")
     inventory = [{k:v for k,v in r.items() if k != "path"} for r in records]
