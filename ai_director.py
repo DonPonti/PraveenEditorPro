@@ -65,7 +65,7 @@ CREATIVE BRIEF: {brief}
 TARGET: {int(target_length)} seconds. FORMAT: {aspect}. STYLE: {visual_style}.
 Use only visible content; do not invent events, dialogue, locations, or claims. Build hook, context, development, strongest moment and ending. Vary shot length and avoid random montage sequencing. Keep shots 0.7–8 seconds; speed 0.85–1.25 normally. For video source_start/source_end are seconds in that clip; timeline duration=(end-start)/speed. For photos set source range to 0 and provide duration.
 CLIP INVENTORY: {json.dumps(inventory, ensure_ascii=False)}
-Return ONLY JSON: {"title":"...","hook":"...","outro":"...","editorial_summary":"...","shots":[{"clip_id":0,"source_start":0.5,"source_end":3.5,"duration":3,"speed":1,"section":"intro","role":"opening hook","reason":"...","move":"push","effects":[]}]}
+Return ONLY JSON: {{"title":"...","hook":"...","outro":"...","editorial_summary":"...","shots":[{{"clip_id":0,"source_start":0.5,"source_end":3.5,"duration":3,"speed":1,"section":"intro","role":"opening hook","reason":"...","move":"push","effects":[]}}]}}
 Allowed section: intro/build/peak/cooldown. Allowed move: none/push/pull/punch/shake. Allowed effects: flash/glitch/whip/ramp/dip_in/dip_out. For photos use source_start=0, source_end=0 and duration. Use enough shots to approach target length. No markdown."""
     cb("Sending sampled still frames and creative brief to Gemini…", 0.55)
     contents = [prompt]
