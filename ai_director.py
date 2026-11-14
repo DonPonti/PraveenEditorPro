@@ -83,7 +83,9 @@ Allowed section: intro/build/peak/cooldown. Allowed move: none/push/pull/punch/s
     items, notes = [], []
     for shot in shots[:36]:
         try:
-            cid = int(shot.get("clip_id")); rec = records[cid]; speed = min(2.0,max(0.5,float(shot.get("speed",1))))
+            cid = int(shot.get("clip_id"))
+            if cid < 0 or cid >= len(records): continue
+            rec = records[cid]; speed = min(2.0,max(0.5,float(shot.get("speed",1))))
             section = section_ids.get(str(shot.get("section","build")).lower(),1); kind = rec["kind"]
             if kind == "video":
                 start = max(0.0,float(shot.get("source_start",0))); end = min(rec["duration"],float(shot.get("source_end",0)))
