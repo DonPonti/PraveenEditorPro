@@ -41,6 +41,29 @@ python -m pip install faster-whisper
 
 The first Whisper run downloads model weights. This is separate from Gemini and does not upload your footage.
 
+## AI Director — story-led automatic editing
+
+The AI Creator tab now includes an **AI Director** workflow. Add your source clips/photos,
+choose music in Settings, enter a creative brief, and select a target duration and editing
+direction. AI Director samples representative frames locally, sends those still frames plus
+your brief to Gemini, validates the returned shot plan, and builds an editable timeline in
+the existing editor. Review the timeline, adjust individual clips, then preview or export.
+
+Examples of briefs:
+- "Make a 30-second cinematic travel film. Start with the strongest landscape, build a
+  feeling of discovery, and finish on the most memorable view. Use restrained cuts."
+- "Create a fast 20-second product teaser. Open on the clearest product shot, show details,
+  build energy, and end with a clean product hero shot."
+- "Make an emotional family-memory montage. Keep the pacing gentle and avoid flashy effects."
+
+**Privacy:** original video and audio files are not uploaded. The app sends a limited set of
+sampled JPEG frames and the written brief to Gemini for visual shot selection. Rendering and
+the original media stay on your PC. The AI plan is a first cut, not a guarantee of perfect
+story interpretation; review it before publishing.
+
+The AI Director uses the existing Gemini API key field and the `google-genai` package.
+The model configured in `ai_director.py` is `gemini-2.5-flash`.
+
 ## Gemini Creator Assistant
 
 The AI Creator tab uses the Google Gen AI Python SDK. Set an API key in the app or as `GEMINI_API_KEY` / `GOOGLE_API_KEY`. Gemini text generation uses API access and its own usage limits; a Gemini app subscription does not automatically include API quota. Video/audio editing and rendering remain local.
